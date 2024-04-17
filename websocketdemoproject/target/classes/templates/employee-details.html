@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Employee Details</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			background-color: #f4f4f4;
+		}
+
+		.container {
+			max-width: 400px;
+			margin: 50px auto;
+			padding: 20px;
+			background-color: #fff;
+			border-radius: 5px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+		}
+
+		h2 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 20px;
+		}
+
+		label {
+			font-weight: bold;
+		}
+
+		input[type="text"] {
+			width: 100%;
+			padding: 8px;
+			margin-bottom: 10px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			transition: border-color 0.3s;
+		}
+
+		input[type="text"]:focus {
+			outline: none;
+			border-color: dodgerblue;
+		}
+
+		button[type="submit"] {
+			width: 100%;
+			padding: 10px;
+			background-color: dodgerblue;
+			color: #fff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		button[type="submit"]:hover {
+			background-color: #0073e6;
+		}
+
+		.status {
+			font-weight: bold;
+			color: #333;
+		}
+
+		.employee-details {
+			margin-top: 20px;
+			border-top: 1px solid #ccc;
+			padding-top: 20px;
+		}
+
+		.tab {
+			display: none;
+			padding: 20px;
+			background-color: #f9f9f9;
+			border-radius: 5px;
+			margin-top: 10px;
+		}
+
+		.tab.active {
+			display: block;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<h2>Employee Details</h2>
+		<form id="employeeForm">
+			<label for="id">ID:</label>
+			<input type="text" id="id" name="id" placeholder="Enter ID">
+			<label for="name">Name:</label>
+			<input type="text" id="name" name="name" placeholder="Enter Name">
+			<button type="submit">Submit</button>
+		</form>
+
+		<!-- Display status message if available -->
+		<div class="status" id="statusDiv" style="display: none;">
+			<p>Status: <span id="statusSpan"></span></p>
+		</div>
+
+		<div class="employee-details" id="employeeDetails">
+			<!-- This will be dynamically populated -->
+		</div>
+	</div>
+
+	<!-- Include Thymeleaf JavaScript and WebSocket connection -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+	<script>
+		const socket = new SockJS('http://localhost:8080/submit');
+		const stompClient = Stomp.over(socket);
+
+		// Generate a unique identifier for this tab
+
+		const tabId = Math.random().toString(36).substring(7);
+		// Connect to the WebSocket server
+		stompClient.connect({}, function (frame) {
+			// Subscribe to status updates specific to this tab
+			stompClient.subscribe(`/topic/employee-status/`, function (response) {
+				// Parse the JSON response containing employee status updates
+				const updatedStatus = JSON.parse(response.body);
+				// Call the updateEmployeeStatus function to handle the status update
+				updateEmployeeStatus(updatedStatus);
+			});
+		});
+
+		function createTab(employee) {
+			const employeeId = employee.id;
+			const existingTab = document.getElementById(`tab-${employeeId}`);
+
+			// Remove any existing tab with the same ID
+			if (existingTab) {
+				existingTab.remove();
+			}
+
+			// Create a new tab with the submitted employee details
+			const tabContent = `
+        <div class="tab" id="tab-${employeeId}" data-id="${employeeId}">
+            <h3>Submitted Employee Details</h3>
+            <p>ID: ${employeeId}</p>
+            <p>Name: ${employee.name}</p>
+            <p class="status">Status: <span id="status-${employeeId}">Pending</span></p>
+        </div>
+    `;
+			document.getElementById('employeeDetails').insertAdjacentHTML('beforeend', tabContent);
+			document.getElementById(`tab-${employeeId}`).classList.add('active');
+		}
+
+
+		function updateEmployeeStatus(updatedStatus) {
+			const employeeId = updatedStatus.id;
+			const statusSpan = document.getElementById(`status-${employeeId}`);
+			if (statusSpan) {
+				statusSpan.textContent = updatedStatus.status;
+			}
+		}
+
+		document.getElementById("employeeForm").addEventListener("submit", function (event) {
+			event.preventDefault();
+			submit();
+		});
+
+		function submit() {
+			var val1 = document.getElementById("id").value;
+			var val2 = document.getElementById("name").value;
+
+			// Check if an employee with the same ID already exists in the tab
+			const existingTab = document.getElementById(`tab-${val1}`);
+			if (existingTab) {
+				// If the tab exists, update its content
+				const nameElement = existingTab.querySelector('p:nth-of-type(2)');
+				nameElement.textContent = `Name: ${val2}`;
+
+				// Update the status to "Pending" again
+				const statusSpan = existingTab.querySelector('.status span');
+				statusSpan.textContent = 'Pending';
+			} else {
+				// If the tab doesn't exist, create a new one
+				let data = {
+					"id": val1,
+					"name": val2
+					// Include the tabId in the submitted data
+				};
+				stompClient.send("/app/submit", {}, JSON.stringify(data), {
+					destination: '/topic/employee'
+				});
+
+				// After submitting, create a new tab to display the details
+				createTab(data); // Assuming 'data' contains the submitted employee details
+			}
+		}
+
+
+	</script>
+</body>
+
+</html>

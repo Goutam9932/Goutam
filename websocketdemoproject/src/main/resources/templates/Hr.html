@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<!-- Add your meta tags, title, and CSS styles -->
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			background-color: #f4f4f4;
+		}
+
+		.container {
+			max-width: 800px;
+			margin: 20px auto;
+			padding: 20px;
+			background-color: #fff;
+			border-radius: 5px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		}
+
+		h2 {
+			margin-top: 0;
+			color: #333;
+		}
+
+		.employee-request {
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			margin-bottom: 10px;
+			background-color: #f9f9f9;
+		}
+
+		.employee-info {
+			font-weight: bold;
+			margin-bottom: 5px;
+		}
+
+		.actions button {
+			margin-right: 10px;
+			cursor: pointer;
+			padding: 5px 10px;
+			border: none;
+			border-radius: 3px;
+			background-color: #007bff;
+			color: #fff;
+			transition: background-color 0.3s;
+		}
+
+		.actions button:hover {
+			background-color: #0056b3;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<h2>Employee Requests</h2>
+		<div id="employeeList"></div>
+	</div>
+
+	<!-- Include SockJS and Stomp.js -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+	<script>
+		const socket = new SockJS('http://localhost:8080/submit');
+		const stompClient = Stomp.over(socket);
+
+		stompClient.connect({}, function (frame) {
+			stompClient.subscribe('/topic/employee', function (response) {
+				const employee = JSON.parse(response.body);
+				updateEmployeeList(employee);
+			});
+		});
+
+		// Function to update the employee list with new requests
+		function updateEmployeeList(employee) {
+			const employeeListDiv = document.getElementById('employeeList');
+			const employeeDiv = document.createElement('div');
+			employeeDiv.dataset.id = employee.id;
+			employeeDiv.innerHTML = `
+            <div class="employee-info">
+                <p>Name: ${employee.name}</p>
+            </div>
+            <div class="actions">
+                <button onclick="approveEmployee(${employee.id})">Approve</button>
+                <button onclick="rejectEmployee(${employee.id})">Reject</button>
+            </div>
+            <div class="status" id="status-${employee.id}">
+                <!-- Status will be dynamically updated here -->
+            </div>
+        `;
+			employeeListDiv.appendChild(employeeDiv);
+		}
+
+		// Function to handle approval of an employee request
+		function approveEmployee(id) {
+			var sendTopic = "/app/approve/" + id;
+			stompClient.send(sendTopic, {}, JSON.stringify(id));
+		}
+
+		// Function to handle rejection of an employee request
+		function rejectEmployee(id) {
+			var sendTopic = "/app/reject/" + id;
+			stompClient.send(sendTopic, {}, JSON.stringify(id));
+		}
+
+		// Subscribe to status updates specific to each tab
+		const tabId = Math.random().toString(36).substring(7);
+		stompClient.subscribe(`/topic/employee-status/`, function (response) {
+			const updatedStatus = JSON.parse(response.body);
+			updateEmployeeStatus(updatedStatus);
+
+			// If the status is either Approved or Rejected, remove the employee element from the DOM
+			if (updatedStatus.status === "Approved" || updatedStatus.status === "Rejected") {
+				const employeeId = updatedStatus.id;
+				removeEmployeeElement(employeeId);
+			}
+		});
+
+	</script>
+
+
+</body>
+
+</html>
