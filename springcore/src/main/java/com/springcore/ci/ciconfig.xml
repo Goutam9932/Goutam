@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+	<bean class="com.springcore.ci.Adress" name="ad">
+		<constructor-arg value="BBS" type="String" />
+		<constructor-arg value="Goutam" type="String" />
+		<constructor-arg value="123" type="int"  />
+		<constructor-arg name="employee" type="Emp" ref="employee" />
+	</bean>
+
+<bean class="com.springcore.ci.Emp" name="employee">
+		<constructor-arg value="Goutam" type="String" />
+		<constructor-arg value="Khargapr" type="String" />
+		<constructor-arg value="123" type="int" />
+	</bean>
+
+	<!-- Define Person bean -->
+	<bean class="com.springcore.ci.Person" name="person">
+		<constructor-arg name="name" value="Goutam" />
+		<constructor-arg name="personid" value="12"/>
+		<constructor-arg name="adress" type="Adress" ref="ad" />
+		
+	</bean>
+
+</beans>
