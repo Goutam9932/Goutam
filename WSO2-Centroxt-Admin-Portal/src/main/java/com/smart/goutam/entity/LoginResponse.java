@@ -24,4 +24,8 @@ public class LoginResponse {
         this.status = status;
         this.message = message;
     }
+
+	public LoginResponse(Long id, String userName, String firstName, String lastName) {
+		// TODO Auto-generated constructor stub
+	}
 }

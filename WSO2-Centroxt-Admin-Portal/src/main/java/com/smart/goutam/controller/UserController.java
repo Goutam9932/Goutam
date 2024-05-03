@@ -48,7 +48,8 @@ public class UserController {
 
 
 	    @PostMapping(value = "/newuser", produces = MediaType.APPLICATION_JSON_VALUE)
-	    public ResponseEntity<Object> addUser(@RequestParam("userName") String userName,
+	    public ResponseEntity<Object> addUser(
+	    		@RequestParam("userName") String userName,
 	                                           @RequestParam("firstName") String firstName,
 	                                           @RequestParam("lastName") String lastName,
 	                                           @RequestParam("country") String country,
@@ -94,7 +95,7 @@ public class UserController {
 	            
 	            // Check if user creation is successful
 	            if (responseEntity.getStatusCode() == HttpStatus.CREATED) {
-	                // Return a JSON response with user details if user creation is successful
+	                // Return the entire user object in the response
 	                return ResponseEntity.ok().body(responseEntity.getBody());
 	            } else {
 	                // Handle the case where user creation fails
@@ -106,7 +107,6 @@ public class UserController {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
 	        }
 	    }
-
     @PostMapping("/newGroup")
     public ResponseEntity<Group> addGroup(@RequestBody Group group) {
         return groupService.createGroup(group);
