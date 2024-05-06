@@ -8,7 +8,7 @@ import com.smart.goutam.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Long>{
 	
-	@Query("select u from User u where u.email =: email")
+	@Query("select u from User u where u.email =:email")
 	//dynamically value ta 
 	public User getUserByName(@Param("email") String email);
 

@@ -18,15 +18,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	private UserRepository userRepository;  
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		// TODO Auto-generated method stub
-		//featching user from database
-		User user=userRepository.getUserByName(username);
-		if(user==null) {
-			throw new UsernameNotFoundException("could not found");
-		}
-		
-		CustomUserDetails customUserDetails = new CustomUserDetails(user);
-		return customUserDetails;
+	    try {
+	        User user = userRepository.getUserByName(username);
+	        if (user == null) {
+	            throw new UsernameNotFoundException("User not found with email: " + username);
+	        }
+	        return new CustomUserDetails(user);
+	    } catch (Exception e) {
+	        // Log the error for debugging purposes
+	        e.printStackTrace();
+	        throw new UsernameNotFoundException("Error occurred while loading user by email: " + e.getMessage());
+	    }
 	}
+
 
 }

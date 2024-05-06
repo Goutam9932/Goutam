@@ -2,6 +2,7 @@ package com.smart.goutam.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration  
 @EnableWebSecurity  
 public class MyConfig {
+	
 
     @Bean
     public UserDetailsService getUserDetailService() {
@@ -41,13 +43,14 @@ public class MyConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeRequests()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasRole("USER")
-                .requestMatchers("/newuser", "/newGroup").hasRole("ADMIN")
-                
+            .requestMatchers("/api/v1/login").permitAll() // Allow access to the login endpoint for all users
+            .requestMatchers("/api/v1/newuser").hasRole("ADMIN") 
+            .requestMatchers("/api/v1/newGroup").hasRole("ADMIN") 
+
                 .anyRequest().permitAll()
-            
-            .and().csrf().disable();
+            .and()
+                .httpBasic(); // Use HTTP Basic authentication
         return http.build();
     }
+
 }

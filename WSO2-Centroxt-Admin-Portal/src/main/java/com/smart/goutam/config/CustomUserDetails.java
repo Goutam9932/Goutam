@@ -1,6 +1,7 @@
 package com.smart.goutam.config;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -20,8 +21,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().toString());
-        return List.of(authority);
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().toString()));
     }
 
     @Override
