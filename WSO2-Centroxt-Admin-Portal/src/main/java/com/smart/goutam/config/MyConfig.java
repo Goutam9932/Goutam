@@ -43,11 +43,12 @@ public class MyConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeRequests()
-            .requestMatchers("/api/v1/login").permitAll() // Allow access to the login endpoint for all users
-            .requestMatchers("/api/v1/newuser").hasRole("ADMIN") 
-            .requestMatchers("/api/v1/newGroup").hasRole("ADMIN") 
-
-                .anyRequest().permitAll()
+                // Allow access to the login endpoint for all users
+                .requestMatchers("/api/v1/login").permitAll()
+                // Allow access to the new user and new group endpoints only for users with the ADMIN role
+                .requestMatchers("/api/v1/newuser", "/api/v1/newGroup").hasRole("ADMIN")
+                // Allow access to other endpoints for authenticated users
+                .anyRequest().authenticated()
             .and()
                 .httpBasic(); // Use HTTP Basic authentication
         return http.build();

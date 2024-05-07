@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,11 +39,11 @@ public class UserController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<String> login(HttpServletRequest request) {
+	public ResponseEntity<?> login(HttpServletRequest request) {
 	    String userName = request.getHeader("Authorization");
 	    // Decode the Authorization header to extract the username and password
 	    String[] credentials = new String(Base64.getDecoder()
-	    		.decode(userName.split(" ")[1])).split(":");
+	            .decode(userName.split(" ")[1])).split(":");
 	    String username = credentials[0];
 	    String password = credentials[1];
 
@@ -50,77 +52,92 @@ public class UserController {
 
 	    // Check if user exists and password matches
 	    if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-	        // Check if the user has the role "ADMIN"
+	        // Check if the user is an admin
 	        if (user.getRole() == User.Role.ADMIN) {
-	            // Return a simple message if login successful and user has admin role
-	            String message = "Admin login successful";
-	            return ResponseEntity.ok().body(message);
+	            // Return message for admin login
+	            return ResponseEntity.ok().body("Admin login successful");
 	        } else {
-	            // Return unauthorized if user does not have admin role
-	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	            // Return user details for regular user login
+	            return ResponseEntity.ok().body(user);
 	        }
 	    } else {
 	        // Return unauthorized if login fails
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	    }
 	}
 
 
-	 @PostMapping(value = "/newuser", produces = MediaType.APPLICATION_JSON_VALUE)
-	    @PreAuthorize("hasRole('ADMIN')")
+
+
+
+	@PostMapping(value = "/newuser", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Object> addUser(@RequestParam("userName") String userName,
-			@RequestParam("firstName") String firstName, @RequestParam("lastName") String lastName,
-			@RequestParam("country") String country, @RequestParam("email") String email,
-			@RequestParam("mobile") String mobile, @RequestParam("password") String password,
-			@RequestParam("role") String role, @RequestParam("groupId") Long groupId,
-			@RequestParam("file") MultipartFile file) {
-		// Handle file upload here
-		if (file.isEmpty()) {
-			// Handle case where file is empty
-			return ResponseEntity.badRequest().body("File is empty");
-		}
+	                                      @RequestParam("firstName") String firstName, @RequestParam("lastName") String lastName,
+	                                      @RequestParam("country") String country, @RequestParam("email") String email,
+	                                      @RequestParam("mobile") String mobile, @RequestParam("password") String password,
+	                                      @RequestParam("role") String role, @RequestParam("groupId") Long groupId,
+	                                      @RequestParam("file") MultipartFile file) {
+	    // Check if the logged-in user has the 'ADMIN' role
+	    if (!isAdmin()) {
+	        // If not an admin, return a 403 Forbidden response with a custom message
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to perform this action");
+	    }
 
-		try {
-			// Create a new User object
-			User user = new User();
-			user.setUserName(userName);
-			user.setFirstName(firstName);
-			user.setLastName(lastName);
-			user.setCountry(country);
-			user.setEmail(email);
-			user.setMobile(mobile);
-			user.setPassword(password);
+	    // Handle file upload here
+	    if (file.isEmpty()) {
+	        // Handle case where file is empty
+	        return ResponseEntity.badRequest().body("File is empty");
+	    }
 
-			// Set role
-			user.setRole(User.Role.valueOf(role)); // Assuming role is provided as a string
+	    try {
+	        // Create a new User object
+	        User user = new User();
+	        user.setUserName(userName);
+	        user.setFirstName(firstName);
+	        user.setLastName(lastName);
+	        user.setCountry(country);
+	        user.setEmail(email);
+	        user.setMobile(mobile);
+	        user.setPassword(password);
 
-			// Set group
-			Group group = groupService.getGroupById(groupId); // Assuming you have a method to get group by ID
-			if (group == null) {
-				// Handle case where group is not found
-				return ResponseEntity.notFound().build();
-			}
-			user.setGroup(group);
+	        // Set role
+	        user.setRole(User.Role.valueOf(role)); // Assuming role is provided as a string
 
-			// Set image data
-			user.setImage(file.getBytes());
+	        // Set group
+	        Group group = groupService.getGroupById(groupId); // Assuming you have a method to get group by ID
+	        if (group == null) {
+	            // Handle case where group is not found
+	            return ResponseEntity.notFound().build();
+	        }
+	        user.setGroup(group);
 
-			// Call the service method to save the user
-			ResponseEntity<User> responseEntity = userService.createUser(user);
+	        // Set image data
+	        user.setImage(file.getBytes());
 
-			// Check if user creation is successful
-			if (responseEntity.getStatusCode() == HttpStatus.CREATED) {
-				// Return the entire user object in the response
-				return ResponseEntity.ok().body(responseEntity.getBody());
-			} else {
-				// Handle the case where user creation fails
-				return ResponseEntity.status(responseEntity.getStatusCode()).body(responseEntity.getBody());
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			// Handle file upload error
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
-		}
+	        // Call the service method to save the user
+	        ResponseEntity<User> responseEntity = userService.createUser(user);
+
+	        // Check if user creation is successful
+	        if (responseEntity.getStatusCode() == HttpStatus.CREATED) {
+	            // Return the entire user object in the response
+	            return ResponseEntity.ok().body(responseEntity.getBody());
+	        } else {
+	            // Handle the case where user creation fails
+	            return ResponseEntity.status(responseEntity.getStatusCode()).body(responseEntity.getBody());
+	        }
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        // Handle file upload error
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+	    }
+	}
+
+	// Method to check if the logged-in user has the 'ADMIN' role
+	private boolean isAdmin() {
+	    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+	    return authentication.getAuthorities().stream()
+	            .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 	}
 
 	@PostMapping("/newGroup")
