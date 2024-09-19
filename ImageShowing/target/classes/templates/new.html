@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>View Images</title>
+    <script>
+        // Function to handle received messages for showing/hiding images
+      window.addEventListener('message', function (event) {
+    const { imageId, action } = event.data;
+    console.log("Received imageId:", imageId);  // Debugging line
+    if (action === 'on') {
+        showImage(imageId);
+    } else if (action === 'off') {
+        hideImage(imageId);
+    }
+});
+
+
+        // Function to display the image
+        function showImage(imageId) {
+            const imgContainer = document.getElementById('image-container');
+            const newImg = document.createElement('img');
+
+            // Use the correct image path
+            newImg.src = `/image1/${imageId}`;
+            newImg.id = `img-${imageId}`;
+
+            newImg.style.maxWidth = '200px';
+            newImg.style.maxHeight = '200px';
+            imgContainer.appendChild(newImg);
+
+            // Store the displayed image ID in local storage
+            const storedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+            if (!storedImages.includes(imageId)) {
+                storedImages.push(imageId);
+                localStorage.setItem('displayedImages', JSON.stringify(storedImages));
+            }
+            newImg.onerror = function() {
+    console.log(`Failed to load image with ID: ${imageId}`);
+    this.remove();  // Remove the broken image
+};
+
+        }
+        
+
+        // Function to hide the image
+        function hideImage(imageId) {
+            const img = document.getElementById(`img-${imageId}`);
+            if (img) {
+                img.remove();
+            }
+
+            // Remove the image ID from local storage
+            let storedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+            storedImages = storedImages.filter(id => id !== imageId);
+            localStorage.setItem('displayedImages', JSON.stringify(storedImages));
+        }
+
+        // Load previously stored images when the page loads
+        window.onload = function () {
+            const storedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+            storedImages.forEach(imageId => showImage(imageId));
+        }
+    </script>
+</head>
+<body>
+    <h1>View Images</h1>
+    <div id="image-container"></div> <!-- Container for displaying images -->
+</body>
+</html>

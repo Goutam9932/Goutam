@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Uploaded Images</title>
+    <script>
+        let openedTab;
+
+        // Function to open the image tab
+        function openImageTab() {
+            if (!openedTab || openedTab.closed) {
+                openedTab = window.open('/images/view', '_blank'); // Open a new tab for image view
+
+                // When the new tab is loaded, retrieve the displayed images from local storage and display them
+                openedTab.onload = function () {
+                    const displayedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+                    displayedImages.forEach(imageId => {
+                        openedTab.postMessage({ imageId: imageId, action: 'on' }, "*");
+                    });
+                };
+            }
+        }
+
+        // Function to toggle images on/off and store their status in local storage
+        function toggleImage(imageId, action) {
+            if (openedTab) {
+                openedTab.postMessage({ imageId: imageId, action: action }, "*"); // Send message to the new tab
+            } else {
+                openImageTab();
+                setTimeout(() => toggleImage(imageId, action), 100); // Retry after opening
+            }
+
+            // Update local storage to keep track of displayed images
+            let displayedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+            if (action === 'on') {
+                if (!displayedImages.includes(imageId)) {
+                    displayedImages.push(imageId); // Add the image ID
+                }
+            } else if (action === 'off') {
+                displayedImages = displayedImages.filter(id => id !== imageId); // Remove the image ID
+            }
+            localStorage.setItem('displayedImages', JSON.stringify(displayedImages)); // Save updated list
+        }
+    </script>
+</head>
+<body>
+    <h1>Uploaded Images</h1>
+    <div>
+        <ul>
+            <li th:each="image : ${images}">
+                <!-- Display the image and buttons for toggle -->
+                <a th:href="@{/image/{id}(id=${image.id})}">
+                    <img th:src="@{/image/{id}(id=${image.id})}" alt="Image" style="max-width: 200px; max-height: 200px;" />
+                </a>
+                <!-- On and Off buttons to trigger the image visibility -->
+                <button th:onclick="'toggleImage(' + ${image.id} + ', \'on\')'">On</button>
+                <button th:onclick="'toggleImage(' + ${image.id} + ', \'off\')'">Off</button>
+            </li>
+        </ul>
+    </div>
+    <a th:href="@{/upload}">Back to Upload</a>
+</body>
+</html>
