@@ -68,7 +68,6 @@ public class ImageController {
                 .body(image.getData());  // Assuming 'data' is a byte[] containing the image
     }
 
-
     @GetMapping("/image1/{id}")
     public ResponseEntity<byte[]> getImage1(@PathVariable("id") Long id) {
         Image image = imageService.getImageDataById(id);
@@ -81,6 +80,7 @@ public class ImageController {
             return ResponseEntity.notFound().build();
         }
     }
+
 
 
     // Endpoint to open a new tab and display selected images dynamically

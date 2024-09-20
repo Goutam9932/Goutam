@@ -22,6 +22,14 @@
 
         // Function to toggle images on/off and store their status in local storage
         function toggleImage(imageId, action) {
+            let displayedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
+
+            // Check if the image is already displayed and action is 'on'
+            if (action === 'on' && displayedImages.includes(imageId)) {
+                alert("This image is already displayed.");
+                return;  // Exit the function to prevent toggling the same image again
+            }
+
             if (openedTab) {
                 openedTab.postMessage({ imageId: imageId, action: action }, "*"); // Send message to the new tab
             } else {
@@ -30,7 +38,6 @@
             }
 
             // Update local storage to keep track of displayed images
-            let displayedImages = JSON.parse(localStorage.getItem('displayedImages')) || [];
             if (action === 'on') {
                 if (!displayedImages.includes(imageId)) {
                     displayedImages.push(imageId); // Add the image ID
