@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 import com.example.demo.service.OtpService;
 
@@ -52,14 +53,14 @@ private OtpService otpService;
         http.csrf().disable()
             .authorizeRequests()
                 .requestMatchers("/login", "/register").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/admin/**").authenticated()  // Ensure /admin/** URLs are secured
             .and()
                 .formLogin()
                     .loginPage("/login")
                     .failureUrl("/login?error=true")
                     .successHandler((request, response, authentication) -> {
                         otpService.sendOtp(authentication.getName()); // Send OTP after successful login
-                        response.sendRedirect("/otp"); // Redirect to OTP page
+                        response.sendRedirect("/otp"); // Redirect to OTP page after login
                     })
                     .permitAll()
             .and()
@@ -67,6 +68,7 @@ private OtpService otpService;
                     .permitAll();
         return http.build();
     }
+
     @Bean
     public AuthenticationSuccessHandler successHandler() {
         return new SimpleUrlAuthenticationSuccessHandler() {
@@ -77,5 +79,6 @@ private OtpService otpService;
             }
         };
     }
+   
 
 }

@@ -16,4 +16,5 @@ public class LoginController {
     public String dashboard() {
         return "admin_dashboard"; // Return the dashboard HTML page after login
     }
+    
 }

@@ -17,27 +17,25 @@ import com.example.demo.service.OtpService;
 @RequestMapping("/otp")
 public class OtpController {
 
-    @Autowired
-    private OtpService otpService; // Create an OTP service to handle OTP logic
+	@Autowired
+	private OtpService otpService; // Create an OTP service to handle OTP logic
 
-    @GetMapping
-    public ModelAndView showOtpPage() {
-        return new ModelAndView("otp"); // Return the OTP view
-    }
-    
+	@GetMapping
+	public ModelAndView showOtpPage() {
+		return new ModelAndView("otp"); // Return the OTP view
+	}
 
+	@PostMapping
+	public String verifyOtp(@RequestParam String otp, Authentication authentication) {
+		if (otpService.verifyOtp(authentication.getName(), otp)) {
+			return "admin_dashboard"; // Redirect to dashboard if OTP is correct
+		}
+		return "redirect:/otp?error=true"; // Redirect back to OTP page with error
+	}
 
-    @PostMapping
-    public String verifyOtp(@RequestParam String otp, Authentication authentication) {
-        if (otpService.verifyOtp(authentication.getName(), otp)) {
-            return "admin_dashboard"; // Redirect to dashboard if OTP is correct
-        }
-        return "redirect:/otp?error=true"; // Redirect back to OTP page with error
-    }
-
-    @PostMapping("/send")
-    public String sendOtp(Authentication authentication) {
-        otpService.sendOtp(authentication.getName()); // Send OTP to the user's email
-        return "OTP sent"; // Could return some status
-    }
+	@PostMapping("/send")
+	public String sendOtp(Authentication authentication) {
+		otpService.sendOtp(authentication.getName()); // Send OTP to the user's email
+		return "OTP sent"; // Could return some status
+	}
 }
