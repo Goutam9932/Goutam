@@ -2,9 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>OTP Verification</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet"> <!-- Using Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* Same CSS as before */
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f0f2f5;
@@ -76,9 +75,8 @@
             cursor: not-allowed;
         }
 
-        /* Add this class for the green background */
         .enabled-button {
-            background-color: #28a745 !important; /* Green color */
+            background-color: #28a745 !important;
         }
 
         #timer {
@@ -90,7 +88,13 @@
 
         .error-message {
             color: red;
-            font-size: 14px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .info-message {
+            color: red;
+            font-size: 16px;
             margin-top: 10px;
         }
 
@@ -104,30 +108,61 @@
 
     <script>
         let timer;
-        let countdown = 120; // 2 minutes countdown
+        let countdown = 60;
 
         function startTimer() {
+            clearInterval(timer);
             timer = setInterval(function () {
                 let minutes = Math.floor(countdown / 60);
                 let seconds = countdown % 60;
                 document.getElementById("timer").innerHTML = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
-
                 countdown--;
                 if (countdown < 0) {
                     clearInterval(timer);
-                    document.getElementById("resendButton").disabled = false; // Enable resend button
-                    document.getElementById("resendButton").classList.add("enabled-button"); // Change color to green
+                    document.getElementById("resendButton").disabled = false;
+                    document.getElementById("resendButton").classList.add("enabled-button");
                 }
             }, 1000);
         }
 
         window.onload = function () {
-            startTimer(); // Start the countdown timer when the page loads
+            startTimer();
+
+            // Check for error or limit messages
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMessage = urlParams.get('error');
+            const limitMessage = urlParams.get('otpLimitMessage');
+
+            if (errorMessage) {
+                document.querySelector('.error-message').textContent = "Invalid OTP. Please try again.";
+                document.querySelector('.error-message').style.display = 'block';
+            }
+
+            if (limitMessage) {
+                document.querySelector('.info-message').textContent = "OTP limit reached";
+                document.querySelector('.info-message').style.display = 'block';
+            }
         };
-         function resendOtp() {
-            // Trigger the resend OTP via the backend
+
+        function resendOtp() {
             fetch('/otp/send', { method: 'POST' })
-                
+                .then(response => {
+                    if (response.ok) {
+                        countdown = 60;
+                        document.getElementById("resendButton").disabled = true;
+                        document.getElementById("resendButton").classList.remove("enabled-button");
+                        startTimer();
+                    } else if (response.status === 429) {
+                        // Assuming your backend sends a response body with a message
+                        response.text().then(text => {
+                            document.querySelector('.info-message').textContent = text;
+                            document.querySelector('.info-message').style.display = 'block';
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
         }
     </script>
 </head>
@@ -139,12 +174,12 @@
             <button type="submit" id="submitButton">Submit</button>
         </form>
 
-        <div id="timer">2:00</div> <!-- Timer display -->
+        <div id="timer">1:00</div>
 
-<button id="resendButton" onclick="resendOtp()" disabled>Resend OTP</button> <!-- Resend OTP button -->
-        <div th:if="${param.error}" class="error-message">
-            <p>Invalid OTP. Please try again.</p>
-        </div>
+        <button id="resendButton" onclick="resendOtp()" disabled>Resend OTP</button>
+
+        <div class="error-message" style="display:none;"></div>
+        <div class="info-message" style="display:none;"></div>
     </div>
 </body>
 </html>

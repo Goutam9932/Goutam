@@ -11,11 +11,29 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(unique = true)
     private String email;
-    
+
     private String password;
+
+    // New fields
+    private String name;
+
+    private String role;
+
+    // Constructors
+    public User(Long id, String email, String password, String name, String role) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.name = name;
+        this.role = role;
+    }
+
+    public User() {
+        // Default constructor
+    }
 
     // Getters and setters
     public Long getId() {
@@ -42,22 +60,24 @@ public class User {
         this.password = password;
     }
 
-	public User(Long id, String email, String password) {
-		super();
-		this.id = id;
-		this.email = email;
-		this.password = password;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public User() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public String toString() {
-		return "User [id=" + id + ", email=" + email + ", password=" + password + "]";
-	}
-    
-    
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    @Override
+    public String toString() {
+        return "User [id=" + id + ", email=" + email + ", password=" + password + ", name=" + name + ", role=" + role + "]";
+    }
 }
