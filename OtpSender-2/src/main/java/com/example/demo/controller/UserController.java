@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -146,4 +147,17 @@ public class UserController {
 	        return "redirect:/userdetails"; // Redirect to the user details page after updating
 	    }
 
+	    
+	    @PostMapping("/user/delete/{id}")
+	    public String deleteUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+	        if (userRepository.existsById(id)) {
+	            userRepository.deleteById(id);
+	            redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully!");
+	        } else {
+	            redirectAttributes.addFlashAttribute("errorMessage", "User not found with ID: " + id);
+	        }
+	        return "redirect:/userdetails";
+	    }
+
+  
 }

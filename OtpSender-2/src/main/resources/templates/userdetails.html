@@ -58,26 +58,33 @@
     </thead>
     <tbody>
        <tr th:each="user : ${users}">
-    <td th:text="${user.id}"></td>
-    <td th:text="${user.email}"></td>
-    <td th:text="${user.name}"></td>
-    <td th:text="${user.role}"></td>
-    <td>
-        <a th:href="@{/user/edit(id=${user.id})}" 
-           class="btn btn-warning"
-           th:if="${user.role != 'ADMIN'}">Edit</a>
-        <!-- Disable the edit button for ADMIN users -->
-        <button class="btn btn-secondary" th:if="${user.role == 'ADMIN'}" disabled>Edit (Admin)</button>
-    </td>
-</tr>
-
+            <td th:text="${user.id}"></td>
+            <td th:text="${user.email}"></td>
+            <td th:text="${user.name}"></td>
+            <td th:text="${user.role}"></td>
+            <td>
+                <!-- Edit Button -->
+                <a th:href="@{/user/edit(id=${user.id})}" 
+                   class="btn btn-warning"
+                   th:if="${user.role != 'ADMIN'}">Edit</a>
+                <button class="btn btn-secondary" th:if="${user.role == 'ADMIN'}" disabled>Edit </button>
+                
+                <!-- Delete Button -->
+                <form th:action="@{/user/delete/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger"
+                            th:if="${user.role != 'ADMIN'}"
+                            >
+                        Delete
+                    </button>
+                    <button class="btn btn-secondary" th:if="${user.role == 'ADMIN'}" disabled>Delete </button>
+                </form>
+            </td>
+        </tr>
     </tbody>
 </table>
 
-    
     <a href="/admin/dashboard" class="btn btn-danger btn-block btn-back">Back to Admin Dashboard</a>
 </div>
-
 
     <!-- Bootstrap JS and dependencies (optional) -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

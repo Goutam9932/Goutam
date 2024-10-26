@@ -38,35 +38,37 @@
     <div class="container">
         <h1>Admin Users</h1>
         
-       <table class="table table-bordered table-striped">
-    <thead class="thead-light">
-        <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Action</th>
-            <th th:if="${canEdit}">Actions</th> <!-- Only show Actions column if canEdit is true -->
-        </tr>
-    </thead>
-    <tbody>
-       <tr th:each="admin : ${admins}">
-    <td th:text="${admin.id}"></td>
-    <td th:text="${admin.email}"></td>
-    <td th:text="${admin.name}"></td>
-    <td th:text="${admin.role}"></td>
-    <td>
-        <a th:href="@{/admin/edit(id=${admin.id})}" class="btn btn-warning">Edit</a>
-    </td>
-</tr>
+        <table class="table table-bordered table-striped">
+            <thead class="thead-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="admin : ${admins}">
+                    <td th:text="${admin.id}"></td>
+                    <td th:text="${admin.email}"></td>
+                    <td th:text="${admin.name}"></td>
+                    <td th:text="${admin.role}"></td>
+                   <td>
+    <a th:href="@{/admin/edit(id=${admin.id})}" class="btn btn-warning">Edit</a>
+    <form th:action="@{/user/delete/{id}(id=${admin.id})}" method="post" style="display:inline;">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</td>
 
-    </tbody>
-</table>
+                </tr>
+            </tbody>
+        </table>
 
         <a href="/admin/dashboard" class="btn btn-danger btn-block btn-back">Back to Admin Dashboard</a>
     </div>
 
-    <!-- Bootstrap JS and dependencies (optional) -->
+    <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
