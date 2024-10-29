@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Details</title>
+    <title>Admin Users</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
             background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
         }
 
         .container {
@@ -26,11 +27,23 @@
         }
 
         table {
-            margin-top: 20px;
+            margin-top: 30px;
+        }
+
+        .user-image {
+            width: 75px;
+            height: 75px;
+            border-radius: 55%;
+            object-fit: cover;
         }
 
         .btn-back {
             margin-top: 20px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
         }
     </style>
 </head>
@@ -41,7 +54,9 @@
         <table class="table table-bordered table-striped">
             <thead class="thead-light">
                 <tr>
+                    
                     <th>ID</th>
+                    <th>Image</th>
                     <th>Email</th>
                     <th>Name</th>
                     <th>Role</th>
@@ -50,19 +65,23 @@
             </thead>
             <tbody>
                 <tr th:each="admin : ${admins}">
-                    <td th:text="${admin.id}"></td>
+                <td th:text="${admin.id}"></td>
+                    <td>
+                        <img th:src="'data:image/jpeg;base64,' + ${admin.imageBase64}" class="user-image" alt="Admin Image">
+                    </td>
+                    
                     <td th:text="${admin.email}"></td>
                     <td th:text="${admin.name}"></td>
                     <td th:text="${admin.role}"></td>
-                   <td>
-    <a th:href="@{/admin/edit(id=${admin.id})}" class="btn btn-warning">Edit</a>
-    <form th:action="@{/user/delete/{id}(id=${admin.id})}" method="post" style="display:inline;">
-        <button type="submit" class="btn btn-danger">Delete</button>
-    </form>
-</td>
-
+                    <td>
+                        <a th:href="@{/admin/edit(id=${admin.id})}" class="btn btn-warning btn-sm">Edit</a>
+                        <a th:action="@{/user/delete/{id}(id=${admin.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                       
+                    </td>
                 </tr>
             </tbody>
+            </form>
         </table>
 
         <a href="/admin/dashboard" class="btn btn-danger btn-block btn-back">Back to Admin Dashboard</a>

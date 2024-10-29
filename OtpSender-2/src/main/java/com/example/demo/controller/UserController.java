@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
+import java.io.IOException;
 import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,154 +13,143 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.model.User;
-import com.example.demo.repo.UserRepository;
-@Controller
+import com.example.demo.service.OtpService;
+import com.example.demo.service.UserService;
 
+@Controller
 public class UserController {
 
-	
-	 @Autowired
-	    private UserRepository userRepository;
-	 
-	 @GetMapping("/register")
-	    public String showRegistrationForm(Model model) {
-	        model.addAttribute("user", new User());
-	        return "register";  // return the register.html
-	    }
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private OtpService otpService;
+    @GetMapping("/register")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("user", new User());
+        return "register";
+    }
 
-	 @PostMapping("/register")
-	    public String registerUser(@ModelAttribute("user") User user, RedirectAttributes redirectAttributes) {
-	        // Save the user data (e.g., using a repository if no service layer exists)
-	        userRepository.save(user);
+    @PostMapping("/register")
+    public String registerUser(@ModelAttribute("user") User user, 
+                               @RequestParam("imageFile") MultipartFile imageFile,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            // Save the user
+            userService.saveUser(user, imageFile);
 
-	        // Add a success message that will only show once on the redirected page
-	        redirectAttributes.addFlashAttribute("successMessage", "User registered successfully!");
+            // Send registration email with username and password
+            otpService.sendRegistrationEmail(user.getEmail(), user.getEmail(), user.getPassword());
 
-	        // Redirect to the registration page to clear the form fields
-	        return "redirect:/register";
-	    }
+            // Display success message on UI
+            redirectAttributes.addFlashAttribute("successMessage", "User registered successfully! Check your email for login details.");
+        } catch (IOException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error uploading image.");
+        }
+        return "redirect:/register";
+    }
 
-	    @GetMapping("/userdetails")
-	    public String getAllUsers(Model model) {
-	        List<User> users = userRepository.findAll();
-	        model.addAttribute("users", users);  // Add user list to the model
-	        return "userdetails";  // Return Thymeleaf page for user details
-	    }
+   
 
-	    // Method to fetch admin details only
-	    @GetMapping("/admindetails")
-	    public String getAdminDetails(Model model) {
-	        List<User> admins = userRepository.findByRole("ADMIN");  // Fetch only admin users
-	        model.addAttribute("admins", admins);  // Add admin list to the model
-	        return "admindetails";  // Return Thymeleaf page for admin details
-	    }
-	    // Search users by name
-	    // Search users by name
-	    @GetMapping("/search")
-	    public String searchUsers(@RequestParam("name") String name, Model model) {
-	        // Find users by name (case-insensitive search)
-	        List<User> users = userRepository.findByNameContainingIgnoreCase(name);
-	        
-	        if (!users.isEmpty()) {
-	            User user = users.get(0); // Assuming we are only interested in the first match
-	            
-	            if ("admin".equalsIgnoreCase(user.getRole())) {
-	                // If the user is an admin, show the admin details page
-	                model.addAttribute("admins", List.of(user)); // Passing the admin details
-	                return "singleuser";  // Redirect to a separate admin UI page (without edit)
-	            } else {
-	                // If the user is a regular user, allow editing
-	                model.addAttribute("user", user);
-	                return "singleuser";  // Redirect to a new UI page for individual user details and editing
-	            }
-	        } else {
-	            model.addAttribute("error", "No user found with the name: " + name);
-	            return "userdetails";  // Return to the same page if no user is found
-	        }
-	    }
+    @GetMapping("/admindetails")
+    public String getAdminDetails(Model model) {
+        model.addAttribute("admins", userService.getAdminDetails());
+        return "admindetails";
+    }
 
+    @GetMapping("/search")
+    public String searchUsers(@RequestParam("name") String name, Model model) {
+        List<User> users = userService.searchUsersByName(name);
+        if (!users.isEmpty()) {
+            User user = users.get(0);
+            if ("admin".equalsIgnoreCase(user.getRole())) {
+                model.addAttribute("admins", List.of(user));
+                return "singleuser";
+            } else {
+                model.addAttribute("user", user);
+                return "singleuser";
+            }
+        } else {
+            model.addAttribute("error", "No user found with the name: " + name);
+            return "userdetails";
+        }
+    }
 
-	   
-	    @GetMapping("/admin/edit")
-	    public String showEditForm1(@RequestParam("id") Long id, Model model) {
-	        // Find the user by ID
-	        User user = userRepository.findById(id)
-	                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + id));
-
-	        // Only allow editing for users with the 'ADMIN' role
-	        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-	            model.addAttribute("admin", user);  // Add the admin object to the model
-	            return "admin-edit";  // Return the Thymeleaf template for editing admins
-	        }
-
-	        return "redirect:/admin/details";  // Redirect to admin details if the role is not ADMIN
-	    }
-
-	    @PostMapping("/admin/update")
-	    public String saveAdmin(User admin) {
-	        // Retrieve the current admin details from the database
-	        User existingAdmin = userRepository.findById(admin.getId())
-	                .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-	        // If the password is null or empty, keep the existing password
-	        if (admin.getPassword() == null || admin.getPassword().isEmpty()) {
-	            admin.setPassword(existingAdmin.getPassword());
-	        }
-
-	        userRepository.save(admin);  // Save the updated admin user
-	        return "redirect:/userdetails";  // Redirect to the admin details page
-	    }
+    @GetMapping("/admin/edit")
+    public String showEditForm1(@RequestParam("id") Long id, Model model) {
+        User user = userService.findUserById(id);
+        if (user != null) {
+            model.addAttribute("admin", user); // Change 'user' to 'admin' for consistency
+            return "admin-edit"; // Ensure this matches your Thymeleaf template name
+        } else {
+            // Handle case where user is not found (e.g., return an error page or redirect)
+            return "redirect:/admindetails"; // Or another appropriate action
+        }
+    }
 
 
-	    @GetMapping("/user/edit")
-	    public String showEditForm(@RequestParam("id") Long id, Model model) {
-	        // Find the user by ID
-	        User user = userRepository.findById(id)
-	                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + id));
+    @PostMapping("/admin/update")
+    public String saveAdmin(User admin, @RequestParam("imageFile") MultipartFile imageFile) {
+        try {
+            userService.updateAdmin(admin, imageFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "redirect:/userdetails";
+    }
 
-	        // Check if the user has an 'admin' role
-	        if ("admin".equalsIgnoreCase(user.getRole())) {
-	            // Redirect to the admin details page without an edit form
-	            model.addAttribute("admins", List.of(user));
-	            return "admindetails";
-	        } else {
-	            // Show the edit form for regular users
-	            model.addAttribute("user", user);
-	            return "user-edit";
-	        }
-	    }
+    @GetMapping("/user/edit")
+    public String showEditForm(@RequestParam("id") Long id, Model model) {
+        User user = userService.findUserById(id);
+        
+        // Check if user is found
+        if (user != null) {
+            // Add user to model for the edit form
+            model.addAttribute("user", user);
+            return "user-edit"; // Ensure this view exists for editing users
+        } else {
+            // Handle case where user is not found
+            model.addAttribute("errorMessage", "User not found.");
+            return "error"; // Redirect to an error page or handle as needed
+        }
+    }
 
 
-	    @PostMapping("/user/edit")
-	    public String editUser(@ModelAttribute User user, Model model) {
-	        // Fetch the existing user from the database
-	        User existingUser = userRepository.findById(user.getId())
-	                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + user.getId()));
 
-	        // Preserve the existing password if the password is not provided in the form
-	        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-	            user.setPassword(existingUser.getPassword());
-	        }
-
-	        // Save the updated user data
-	        userRepository.save(user);
-	        return "redirect:/userdetails"; // Redirect to the user details page after updating
-	    }
-
-	    
-	    @PostMapping("/user/delete/{id}")
-	    public String deleteUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-	        if (userRepository.existsById(id)) {
-	            userRepository.deleteById(id);
-	            redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully!");
-	        } else {
-	            redirectAttributes.addFlashAttribute("errorMessage", "User not found with ID: " + id);
-	        }
-	        return "redirect:/userdetails";
-	    }
-
-  
+    @PostMapping("/user/edit")
+    public String editUser(@ModelAttribute User user, 
+                           @RequestParam("imageFile") MultipartFile imageFile, 
+                           Model model) {
+        try {
+            userService.updateUser(user, imageFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Error uploading image");
+            return "user-edit";
+        }
+        return "user-edit";
+    }
+    @GetMapping("/userdetails")
+    public String listUsers(@RequestParam(defaultValue = "0") int page, Model model) {
+        Pageable pageable = PageRequest.of(page, 4); // Change the size as needed
+        Page<User> usersPage = userService.findAllUsers(pageable);
+        model.addAttribute("users", usersPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", usersPage.getTotalPages());
+        return "userDetails"; // Return your Thymeleaf template name
+    }
+    @PostMapping("/user/delete/{id}")
+    public String deleteUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/userdetails";
+    }
+    
 }

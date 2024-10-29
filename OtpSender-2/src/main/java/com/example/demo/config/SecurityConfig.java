@@ -42,19 +42,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeRequests()
-                .requestMatchers("/login", "/register").permitAll()
-                .requestMatchers("/admin/**").authenticated()
+                .requestMatchers("/login", "/register", "/otp").permitAll() // Allow login, register, and OTP without authentication
+                .requestMatchers("/admin/**").hasRole("ADMIN") // Restrict admin endpoints
+                .requestMatchers("/user/edit/**").hasAnyRole("USER", "ADMIN") // Allow both USER and ADMIN to access the edit page
+                .requestMatchers("/user/**").hasRole("USER")   // Restrict user endpoints based on role
+                .anyRequest().authenticated()
             .and()
                 .formLogin()
                     .loginPage("/login")
                     .failureHandler((request, response, exception) -> {
-                        response.sendRedirect("/login?error=true");  // Redirect to error page on failure
+                        response.sendRedirect("/login?error=true");
                     })
                     .successHandler((request, response, authentication) -> {
                         String email = authentication.getName();
-
-                        // Send OTP without counting as resend
-                        otpService.sendOtp(email, false);  // Send initial OTP, no resend
+                        otpService.sendOtp(email, false); // Send OTP without counting as a resend
                         response.sendRedirect("/otp");
                     })
                     .permitAll()
@@ -63,4 +64,5 @@ public class SecurityConfig {
                     .permitAll();
         return http.build();
     }
+
 }

@@ -29,12 +29,24 @@ public class OtpController {
 
     @PostMapping
     public String verifyOtp(@RequestParam String otp, Authentication authentication) {
-        if (otpService.verifyOtp(authentication.getName(), otp)) {
-            // If OTP is correct, reset the resend attempts
-            otpService.resetResendAttempts(authentication.getName());
-            return "admin_dashboard"; // Redirect to dashboard if OTP is correct
+        String email = authentication.getName();
+
+        // Verify OTP
+        if (otpService.verifyOtp(email, otp)) {
+            otpService.resetResendAttempts(email);
+
+            // Redirect based on user roles
+            if (authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
+                return "redirect:/admin/dashboard";
+            } else if (authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"))) {
+                return "userdetails1"; // Make sure this endpoint is available
+            }
         }
-        return "redirect:/otp?error=true"; // Redirect back to OTP page with error
+
+        // Redirect back to OTP page with error if OTP verification fails
+        return "redirect:/otp?error=true";
     }
 
     @PostMapping("/send")

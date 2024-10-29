@@ -1,10 +1,7 @@
 package com.example.demo.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import java.util.Base64;
+import jakarta.persistence.*;
 
 @Entity
 public class User {
@@ -16,19 +13,21 @@ public class User {
     private String email;
 
     private String password;
-
-    // New fields
     private String name;
-
     private String role;
 
+    // New image field
+    @Lob
+    private byte[] image;
+
     // Constructors
-    public User(Long id, String email, String password, String name, String role) {
+    public User(Long id, String email, String password, String name, String role, byte[] image) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
         this.role = role;
+        this.image = image;
     }
 
     public User() {
@@ -74,6 +73,18 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public String getImageBase64() {
+        return image != null ? Base64.getEncoder().encodeToString(image) : "";
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 
     @Override

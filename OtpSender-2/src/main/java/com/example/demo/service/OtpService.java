@@ -81,4 +81,16 @@ public class OtpService {
         message.setText("Your OTP code is: " + otp + ". It is valid for 2 minutes.");
         emailSender.send(message);
     }
+    public void sendRegistrationEmail(String email, String username, String password) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Welcome to Our Service - Your Registration Details");
+        message.setText("Dear User,\n\nYour registration was successful! Here are your login details:\n\n" +
+                        "Username: " + username + "\n" +
+                        "Password: " + password + "\n\n" +
+                        "Please keep this information secure.\n\n" +
+                        "Best regards,\nYour Company Team");
+
+        emailSender.send(message);
+    }
 }
